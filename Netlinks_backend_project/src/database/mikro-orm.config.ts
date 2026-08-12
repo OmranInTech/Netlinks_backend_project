@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { defineConfig } from '@mikro-orm/postgresql';
-import { User } from '../modules/users/user.entity.js';
+
+import { User } from '../shared/entities/user/user.entity.js';
+import { Otp } from '../shared/entities/user/otp.entity.js';
 
 export default defineConfig({
   host: process.env.DB_HOST,
@@ -9,5 +11,5 @@ export default defineConfig({
   password: process.env.DB_PASSWORD,
   dbName: process.env.DB_NAME,
 
-  entities: [User],
+  entities: [User, Otp],
 });

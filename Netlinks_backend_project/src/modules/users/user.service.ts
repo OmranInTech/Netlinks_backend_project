@@ -9,7 +9,8 @@ import { I18nService } from 'nestjs-i18n';
 import { SmsService } from '../../auth/sms.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifySignupDto } from './dto/verify-signup.dto';
-import { User } from './user.entity';
+import { OtpService } from './otp.service';
+import { User } from '../../shared/entities/user/user.entity';
 
 @Injectable()
 export class UserService {
@@ -19,6 +20,7 @@ export class UserService {
     private readonly em: EntityManager,
     private readonly i18n: I18nService,
     private readonly smsService: SmsService,
+    private readonly otpService: OtpService,
   ) {}
 
   async signup(dto: CreateUserDto) {
@@ -44,7 +46,7 @@ export class UserService {
 
     await this.em.persist(user).flush();
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = await this.otpService.generateOtp(phone);
 
     await this.smsService.sendOtp(phone, otp);
 
@@ -59,16 +61,25 @@ export class UserService {
   async verifySignup(dto: VerifySignupDto) {
     const phone = dto.phone;
 
-    const response = await this.smsService.verifyOtp(
+    const verified = await this.otpService.verifyOtp(
       phone,
       dto.otp,
     );
 
+    if (!verified) {
+      return {
+        success: false,
+        message: 'Invalid or expired OTP',
+      };
+    }
+
     this.logger.log(
-      'Mock verification response:',
-      response,
+      `OTP verified successfully for ${phone}`,
     );
 
-    return response;
+    return {
+      success: true,
+      message: 'OTP verified successfully',
+    };
   }
 }
