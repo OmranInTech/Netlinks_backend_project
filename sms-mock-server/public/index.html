@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>SMS Gateway</title>
+
+  <link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+  <div class="container">
+
+    <header class="header">
+      <div>
+        <p class="eyebrow">MOCK SMS SERVER</p>
+        <h1>SMS Gateway</h1>
+        <p class="subtitle">
+          Development OTP messages
+        </p>
+      </div>
+
+      <div class="status">
+        <span class="status-dot"></span>
+        Online
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h2>Latest OTP</h2>
+            <p>OTP messages received from the Taxi backend</p>
+          </div>
+        </div>
+
+        <div id="otp-container">
+          <div class="empty">
+            <div class="empty-icon">📱</div>
+            <h3>No OTP received</h3>
+            <p>
+              When the backend sends an OTP, it will appear here.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Taxi Backend · Mock SMS Environment
+    </footer>
+
+  </div>
+
+  <script>
+    async function loadOtp() {
+      try {
+        const response = await fetch('/api/sms/latest');
+        const data = await response.json();
+
+        const container = document.getElementById('otp-container');
+
+        if (!data.otp) {
+          return;
+        }
+
+        container.innerHTML = `
+          <div class="otp-message">
+
+            <div class="message-top">
+              <span class="badge">OTP RECEIVED</span>
+              <span class="time">
+                ${new Date(data.createdAt).toLocaleTimeString()}
+              </span>
+            </div>
+
+            <div class="phone">
+              ${data.phoneNumber}
+            </div>
+
+            <div class="otp">
+              ${data.otp}
+            </div>
+
+            <div class="message-info">
+              <span>🔐 Verification Code</span>
+              <span>Valid for 5 minutes</span>
+            </div>
+
+          </div>
+        `;
+      } catch (error) {
+        console.error('Failed to load OTP:', error);
+      }
+    }
+
+    loadOtp();
+
+    // Automatically check for a new OTP every 2 seconds
+    setInterval(loadOtp, 2000);
+  </script>
+
+</body>
+</html>
