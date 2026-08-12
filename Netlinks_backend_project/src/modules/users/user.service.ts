@@ -1,44 +1,40 @@
-import { HttpService } from '@nestjs/axios';
 import { EntityManager } from '@mikro-orm/postgresql';
 import {
   ConflictException,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
-import { firstValueFrom } from 'rxjs';
 
+import { SmsService } from '../../auth/sms.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifySignupDto } from './dto/verify-signup.dto';
 import { User } from './user.entity';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     private readonly em: EntityManager,
     private readonly i18n: I18nService,
-    private readonly httpService: HttpService,
+    private readonly smsService: SmsService,
   ) {}
 
   async signup(dto: CreateUserDto) {
-    
     const fullname = dto.fullname.trim();
-
-    // Normalize phone number
-    // 0766 773 758 -> +93766773758
-    // +93 766 773 758 -> +93766773758
-    const phone = this.normalizePhone(dto.phone);
-
+    const phone = dto.phone;
 
     const existingPhone = await this.em.findOne(User, {
       phone,
     });
+
     if (existingPhone) {
       throw new ConflictException(
         await this.i18n.translate('errors.phoneAlreadyExists'),
       );
     }
 
-    
     const user = this.em.create(User, {
       fullname,
       phone,
@@ -46,20 +42,11 @@ export class UserService {
       updatedAt: new Date(),
     });
 
-   
     await this.em.persist(user).flush();
 
-    
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const response = await firstValueFrom(
-      this.httpService.post(
-        'http://localhost:4000/api/sms/send',
-        {
-          phoneNumber: phone,
-          otp,
-        },
-      ),
-    );
+
+    await this.smsService.sendOtp(phone, otp);
 
     return {
       id: user.id,
@@ -70,36 +57,18 @@ export class UserService {
   }
 
   async verifySignup(dto: VerifySignupDto) {
-    const phone = this.normalizePhone(dto.phone);
-    const response = await firstValueFrom(
-      this.httpService.post(
-        'http://localhost:4000/api/sms/verify',
-        {
-          phoneNumber: phone,
-          otp: dto.otp,
-        },
-      ),
+    const phone = dto.phone;
+
+    const response = await this.smsService.verifyOtp(
+      phone,
+      dto.otp,
     );
 
-    console.log('Mock verification response:', response.data);
-
-    return response.data;
-  }
-
-
-  private normalizePhone(phone: string): string {
-    const normalized = phone.replace(/\s+/g, '');
-
-    if (normalized.startsWith('0')) {
-      return `+93${normalized.substring(1)}`;
-    }
-
-    if (normalized.startsWith('+93')) {
-      return normalized;
-    }
-
-    throw new ConflictException(
-      this.i18n.translate('errors.invalidPhone'),
+    this.logger.log(
+      'Mock verification response:',
+      response,
     );
+
+    return response;
   }
 }
