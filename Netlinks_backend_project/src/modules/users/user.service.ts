@@ -1,37 +1,50 @@
 import { EntityManager } from '@mikro-orm/postgresql';
-import {ConflictException,Injectable, Logger,UnauthorizedException,} from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
+import { verify as verifyAuthenticatorCode } from 'otplib';
+
 import { SmsService } from '../../auth/sms.service';
+import { AuthTokenService } from '../../auth/token.service';
+
 import { User } from '../../shared/entities/user/user.entity';
 import { UserTwoFactor } from '../../shared/entities/user/user-two-factor.entity';
+
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifySignupDto } from './dto/verify-signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyLoginDto } from './dto/verify-login.dto';
-import { OtpService } from './otp.service';
 
-import {
-  verify as verifyAuthenticatorCode,
-} from 'otplib';
+import { OtpService } from './otp.service';
+import { UserSessionService } from './user-session/user-session.service';
 
 @Injectable()
 export class UserService {
-  private readonly logger = new Logger(UserService.name);
+  private readonly logger = new Logger(
+    UserService.name,
+  );
 
   constructor(
     private readonly em: EntityManager,
     private readonly i18n: I18nService,
     private readonly smsService: SmsService,
     private readonly otpService: OtpService,
+    private readonly authTokenService: AuthTokenService,
+    private readonly userSessionService: UserSessionService,
   ) {}
 
   async signup(dto: CreateUserDto) {
     const fullname = dto.fullname.trim();
     const phone = dto.phone;
 
-    const existingPhone = await this.em.findOne(User, {
-      phone,
-    });
+    const existingPhone =
+      await this.em.findOne(User, {
+        phone,
+      });
 
     if (existingPhone) {
       throw new ConflictException(
@@ -50,9 +63,15 @@ export class UserService {
 
     await this.em.persist(user).flush();
 
-    const otp = await this.otpService.generateOtp(phone);
+    const otp =
+      await this.otpService.generateOtp(
+        phone,
+      );
 
-    await this.smsService.sendOtp(phone, otp);
+    await this.smsService.sendOtp(
+      phone,
+      otp,
+    );
 
     this.logger.log(
       `Signup OTP sent to ${phone}`,
@@ -66,13 +85,16 @@ export class UserService {
     };
   }
 
-  async verifySignup(dto: VerifySignupDto) {
+  async verifySignup(
+    dto: VerifySignupDto,
+  ) {
     const phone = dto.phone;
 
-    const verified = await this.otpService.verifyOtp(
-      phone,
-      dto.otp,
-    );
+    const verified =
+      await this.otpService.verifyOtp(
+        phone,
+        dto.otp,
+      );
 
     if (!verified) {
       return {
@@ -94,9 +116,10 @@ export class UserService {
   async login(dto: LoginDto) {
     const phone = dto.phone;
 
-    const user = await this.em.findOne(User, {
-      phone,
-    });
+    const user =
+      await this.em.findOne(User, {
+        phone,
+      });
 
     if (!user) {
       throw new ConflictException(
@@ -106,9 +129,15 @@ export class UserService {
       );
     }
 
-    const otp = await this.otpService.generateOtp(phone);
+    const otp =
+      await this.otpService.generateOtp(
+        phone,
+      );
 
-    await this.smsService.sendOtp(phone, otp);
+    await this.smsService.sendOtp(
+      phone,
+      otp,
+    );
 
     this.logger.log(
       `Login OTP sent to ${phone}`,
@@ -121,13 +150,16 @@ export class UserService {
     };
   }
 
-  async verifyLogin(dto: VerifyLoginDto) {
+  async verifyLogin(
+    dto: VerifyLoginDto,
+  ) {
     const phone = dto.phone;
 
-    const verified = await this.otpService.verifyOtp(
-      phone,
-      dto.otp,
-    );
+    const verified =
+      await this.otpService.verifyOtp(
+        phone,
+        dto.otp,
+      );
 
     if (!verified) {
       return {
@@ -136,9 +168,10 @@ export class UserService {
       };
     }
 
-    const user = await this.em.findOne(User, {
-      phone,
-    });
+    const user =
+      await this.em.findOne(User, {
+        phone,
+      });
 
     if (!user) {
       throw new ConflictException(
@@ -152,16 +185,23 @@ export class UserService {
       `Login OTP verified successfully for ${phone}`,
     );
 
-    const twoFactor = await this.em.findOne(
-      UserTwoFactor,
-      {
-        user,
-      },
-    );
+    const twoFactor =
+      await this.em.findOne(
+        UserTwoFactor,
+        {
+          user,
+        },
+      );
 
     const twoFactorEnabled =
       !!twoFactor?.enabledAt;
 
+    /*
+     * OTP is valid.
+     *
+     * If 2FA is enabled, don't issue tokens yet.
+     * The user must verify Google Authenticator.
+     */
     if (twoFactorEnabled) {
       this.logger.log(
         `2FA required for user ${user.id}`,
@@ -172,6 +212,7 @@ export class UserService {
         requiresTwoFactor: true,
         message:
           'Two-factor authentication required',
+
         user: {
           id: user.id,
           fullname: user.fullname,
@@ -180,10 +221,22 @@ export class UserService {
       };
     }
 
+    /*
+     * No 2FA.
+     *
+     * Authentication is complete.
+     */
+    const tokens =
+      await this.createLoginSession(user);
+
     return {
       success: true,
       requiresTwoFactor: false,
       message: 'Login successful',
+
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+
       user: {
         id: user.id,
         fullname: user.fullname,
@@ -196,10 +249,10 @@ export class UserService {
     userId: number,
     code: string,
   ) {
-
-    const user = await this.em.findOne(User, {
-      id: userId,
-    });
+    const user =
+      await this.em.findOne(User, {
+        id: userId,
+      });
 
     if (!user) {
       throw new ConflictException(
@@ -209,12 +262,13 @@ export class UserService {
       );
     }
 
-    const twoFactor = await this.em.findOne(
-      UserTwoFactor,
-      {
-        user,
-      },
-    );
+    const twoFactor =
+      await this.em.findOne(
+        UserTwoFactor,
+        {
+          user,
+        },
+      );
 
     if (!twoFactor) {
       throw new UnauthorizedException(
@@ -250,14 +304,63 @@ export class UserService {
       `2FA login verified successfully for user ${user.id}`,
     );
 
+    /*
+     * OTP was already verified.
+     *
+     * Google Authenticator is now verified.
+     *
+     * Authentication is completely finished.
+     */
+    const tokens =
+      await this.createLoginSession(user);
+
     return {
       success: true,
       message: 'Login successful',
+
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+
       user: {
         id: user.id,
         fullname: user.fullname,
         phone: user.phone,
       },
+    };
+  }
+
+  /**
+   * Create:
+   *
+   * 1. Access JWT
+   * 2. Refresh token
+   * 3. Database session
+   */
+  private async createLoginSession(
+    user: User,
+  ) {
+    /*
+     * Generate short-lived access token.
+     */
+    const accessToken =
+      await this.authTokenService.generateAccessToken(
+        user.id,
+      );
+
+    /*
+     * Generate refresh token and
+     * store its hash in user_session.
+     */
+    const {
+      refreshToken,
+    } =
+      await this.userSessionService.createSession(
+        user,
+      );
+
+    return {
+      accessToken,
+      refreshToken,
     };
   }
 }

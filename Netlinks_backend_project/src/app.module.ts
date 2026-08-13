@@ -11,6 +11,7 @@ import {
 
 import dbConfig from './database/mikro-orm.config.js';
 import { UsersModule } from './modules/users/user.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { UsersModule } from './modules/users/user.module';
       ],
     }),
 
-    UsersModule,
+    UsersModule,AuthModule
   ],
 })
 export class AppModule {}
