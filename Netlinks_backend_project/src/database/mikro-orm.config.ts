@@ -4,6 +4,7 @@ import { defineConfig } from '@mikro-orm/postgresql';
 import { User } from '../shared/entities/user/user.entity.js';
 import { Otp } from '../shared/entities/user/otp.entity.js';
 import { UserSession } from '../shared/entities/user/user-session.entity.js';
+import { UserTwoFactor } from '../shared/entities/user/user-two-factor.entity.js';
 
 export default defineConfig({
   host: process.env.DB_HOST,
@@ -16,5 +17,6 @@ export default defineConfig({
     User,
     Otp,
     UserSession,
+    UserTwoFactor,
   ],
 });

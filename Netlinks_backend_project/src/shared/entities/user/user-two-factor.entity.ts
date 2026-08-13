@@ -1,4 +1,3 @@
-
 import {
   Entity,
   PrimaryKey,
@@ -12,21 +11,39 @@ import { User } from './user.entity';
 @Entity({ tableName: 'user_two_factor' })
 @Unique({ properties: ['user'] })
 export class UserTwoFactor {
-  @PrimaryKey()
-  id!: number;
+  @PrimaryKey({
+    type: 'uuid',
+    defaultRaw: 'gen_random_uuid()',
+  })
+  id!: string;
 
-  @OneToOne(() => User)
+  @OneToOne(() => User, {
+    fieldName: 'user_id',
+  })
   user!: User;
 
-  @Property()
-  enabled!: Date;
+  @Property({
+    fieldName: 'enabled',
+    type: 'datetime',
+    nullable: true,
+  })
+  enabledAt: Date | null = null;
 
-  @Property({ length: 255 })
-  secret!: string;
+  @Property({
+    type: 'string',
+    length: 255,
+    nullable: true,
+  })
+  secret: string | null = null;
 
-  @Property()
-  createdAt!: Date;
+  @Property({
+    type: 'datetime',
+  })
+  createdAt: Date = new Date();
 
-  @Property()
-  updatedAt!: Date;
+  @Property({
+    type: 'datetime',
+    onUpdate: () => new Date(),
+  })
+  updatedAt: Date = new Date();
 }

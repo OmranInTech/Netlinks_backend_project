@@ -1,6 +1,5 @@
 import {
   Entity,
-  Index,
   ManyToOne,
   PrimaryKey,
   Property,
@@ -10,7 +9,10 @@ import { User } from './user.entity';
 
 @Entity({ tableName: 'user_session' })
 export class UserSession {
-  @PrimaryKey()
+  @PrimaryKey({
+    type: 'uuid',
+    defaultRaw: 'gen_random_uuid()',
+  })
   id!: string;
 
   @ManyToOne(() => User, {
@@ -18,21 +20,39 @@ export class UserSession {
   })
   user!: User;
 
-  @Property({ length: 255, unique: true })
+  @Property({
+    type: 'string',
+    length: 255,
+    unique: true,
+  })
   refreshTokenHash!: string;
 
-  @Property()
+  @Property({
+    type: 'datetime',
+  })
   expiresAt!: Date;
 
-  @Property({ nullable: true })
+  @Property({
+    type: 'datetime',
+    nullable: true,
+  })
   revokedAt?: Date;
 
-  @Property({ length: 45, nullable: true })
+  @Property({
+    type: 'string',
+    length: 45,
+    nullable: true,
+  })
   ipAddress?: string;
 
-  @Property({ type: 'text', nullable: true })
+  @Property({
+    type: 'text',
+    nullable: true,
+  })
   userAgent?: string;
 
-  @Property()
+  @Property({
+    type: 'datetime',
+  })
   createdAt: Date = new Date();
 }
