@@ -3,8 +3,8 @@ import {
   Controller,
   Post,
 } from '@nestjs/common';
+import { UserTwoFactorService } from './user-two-factor.service.js';
 
-import { UserTwoFactorService } from './user-two-factor.service';
 
 @Controller('two-factor')
 export class UserTwoFactorController {

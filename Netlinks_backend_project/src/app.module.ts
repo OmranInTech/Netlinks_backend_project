@@ -10,8 +10,9 @@ import {
 } from 'nestjs-i18n';
 
 import dbConfig from './database/mikro-orm.config.js';
-import { UsersModule } from './modules/users/user.module';
-import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/user.module.js';
+import { AuthModule } from './auth/auth.module.js';
+
 
 @Module({
   imports: [

@@ -1,36 +1,33 @@
-import { Knex } from 'knex';
+import { Migration } from '@mikro-orm/migrations';
 
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable('user_two_factor', (table) => {
-    table
-      .uuid('id')
-      .primary()
-      .defaultTo(knex.raw('gen_random_uuid()'));
+export class Migration20260813140000 extends Migration {
 
-    table
-      .integer('user_id')
-      .notNullable()
-      .unique()
-      .references('id')
-      .inTable('user')
-      .onDelete('CASCADE');
+  override async up(): Promise<void> {
+    this.addSql(`
+      create table "user_two_factor" (
+        "id" uuid not null default gen_random_uuid(),
+        "user_id" int not null,
+        "enabled" timestamptz not null,
+        "secret" varchar(255) not null,
+        "created_at" timestamptz not null default current_timestamp,
+        "updated_at" timestamptz not null default current_timestamp,
 
-    table.timestamp('enabled').notNullable();
+        primary key ("id"),
 
-    table.string('secret', 255).notNullable();
+        constraint "user_two_factor_user_id_unique"
+          unique ("user_id"),
 
-    table
-      .timestamp('created_at')
-      .notNullable()
-      .defaultTo(knex.fn.now());
+        constraint "user_two_factor_user_id_foreign"
+          foreign key ("user_id")
+          references "user" ("id")
+          on delete cascade
+      );
+    `);
+  }
 
-    table
-      .timestamp('updated_at')
-      .notNullable()
-      .defaultTo(knex.fn.now());
-  });
-}
-
-export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTableIfExists('user_two_factor');
+  override async down(): Promise<void> {
+    this.addSql(`
+      drop table if exists "user_two_factor" cascade;
+    `);
+  }
 }

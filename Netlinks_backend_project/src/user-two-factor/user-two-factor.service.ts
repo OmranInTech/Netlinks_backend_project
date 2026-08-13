@@ -11,9 +11,9 @@ import {
   verify,
 } from 'otplib';
 import * as QRCode from 'qrcode';
+import { UserTwoFactor } from '../entities/two-factor/user-two-factor.entity.js';
+import { User } from '../entities/users/user.entity.js';
 
-import { User } from '../../../shared/entities/user/user.entity';
-import { UserTwoFactor } from '../../../shared/entities/user/user-two-factor.entity';
 
 @Injectable()
 export class UserTwoFactorService {

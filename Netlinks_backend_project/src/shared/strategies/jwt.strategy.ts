@@ -7,8 +7,8 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 
 import { EntityManager } from '@mikro-orm/postgresql';
+import { User } from '../../entities/users/user.entity.js';
 
-import { User } from '../../shared/entities/user/user.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(

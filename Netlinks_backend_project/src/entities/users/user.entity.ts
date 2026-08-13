@@ -4,8 +4,9 @@ import {
   Property,
   OneToOne,
 } from '@mikro-orm/decorators/legacy';
+import { UserTwoFactor } from '../two-factor/user-two-factor.entity.js';
 
-import { UserTwoFactor } from './user-two-factor.entity';
+
 
 @Entity()
 export class User {

@@ -8,9 +8,8 @@ import {
   randomBytes,
   randomUUID,
 } from 'crypto';
-
-import { User } from '../../../shared/entities/user/user.entity';
-import { UserSession } from '../../../shared/entities/user/user-session.entity';
+import { UserSession } from '../../entities/user-session/user-session.entity.js';
+import { User } from '../../entities/users/user.entity.js';
 
 @Injectable()
 export class UserSessionService {

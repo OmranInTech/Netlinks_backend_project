@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import { Otp } from '../../entities/otp/otp.entity.js';
 
-import { Otp } from '../../shared/entities/user/otp.entity';
+
 
 @Injectable()
 export class OtpService {

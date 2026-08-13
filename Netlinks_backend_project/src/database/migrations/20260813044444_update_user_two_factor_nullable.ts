@@ -1,29 +1,28 @@
-import { Knex } from 'knex';
+import { Migration } from '@mikro-orm/migrations';
 
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.alterTable('user_two_factor', (table) => {
-    table
-      .timestamp('enabled')
-      .nullable()
-      .alter();
+export class Migration20260813120000 extends Migration {
 
-    table
-      .string('secret', 255)
-      .nullable()
-      .alter();
-  });
-}
+  override async up(): Promise<void> {
+    this.addSql(`
+      alter table "user_two_factor"
+      alter column "enabled" drop not null;
+    `);
 
-export async function down(knex: Knex): Promise<void> {
-  await knex.schema.alterTable('user_two_factor', (table) => {
-    table
-      .timestamp('enabled')
-      .notNullable()
-      .alter();
+    this.addSql(`
+      alter table "user_two_factor"
+      alter column "secret" drop not null;
+    `);
+  }
 
-    table
-      .string('secret', 255)
-      .notNullable()
-      .alter();
-  });
+  override async down(): Promise<void> {
+    this.addSql(`
+      alter table "user_two_factor"
+      alter column "enabled" set not null;
+    `);
+
+    this.addSql(`
+      alter table "user_two_factor"
+      alter column "secret" set not null;
+    `);
+  }
 }

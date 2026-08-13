@@ -1,25 +1,25 @@
-import { Knex } from 'knex';
+import { Migration } from '@mikro-orm/migrations';
 
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable('users', (table) => {
-    table.increments('id').primary();
+export class Migration20260813100000 extends Migration {
 
-    table.string('fullname').notNullable();
+  override async up(): Promise<void> {
+    this.addSql(`
+      create table "user" (
+        "id" serial primary key,
+        "fullname" varchar(255) not null,
+        "phone" varchar(255) not null,
+        "created_at" timestamptz not null default current_timestamp,
+        "updated_at" timestamptz not null default current_timestamp,
 
-    table.string('phone').notNullable().unique();
+        constraint "user_phone_unique"
+          unique ("phone")
+      );
+    `);
+  }
 
-    table
-      .timestamp('created_at')
-      .notNullable()
-      .defaultTo(knex.fn.now());
-
-    table
-      .timestamp('updated_at')
-      .notNullable()
-      .defaultTo(knex.fn.now());
-  });
-}
-
-export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTableIfExists('user');
+  override async down(): Promise<void> {
+    this.addSql(`
+      drop table if exists "user" cascade;
+    `);
+  }
 }

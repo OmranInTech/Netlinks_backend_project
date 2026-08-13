@@ -1,9 +1,16 @@
-import { Knex } from 'knex';
+import { Migration } from '@mikro-orm/migrations';
 
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.renameTable('users', 'user');
+export class Migration20260813160000 extends Migration {
+
+  override async up(): Promise<void> {
+    this.addSql(`
+      alter table "users" rename to "user";
+    `);
+  }
+
+  override async down(): Promise<void> {
+    this.addSql(`
+      alter table "user" rename to "users";
+    `);
+  }
 }
-
-export async function down(knex: Knex): Promise<void> {
-  await knex.schema.renameTable('user', 'users');
-} 

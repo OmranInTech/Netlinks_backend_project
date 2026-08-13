@@ -1,43 +1,44 @@
-import { Knex } from 'knex';
+import { Migration } from '@mikro-orm/migrations';
 
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable('user_security_action', (table) => {
-    table
-      .uuid('id')
-      .primary()
-      .defaultTo(knex.raw('gen_random_uuid()'));
+export class Migration20260813150000 extends Migration {
 
-    table
-      .integer('user_id')
-      .nullable()
-      .references('id')
-      .inTable('user')
-      .onDelete('CASCADE');
+  override async up(): Promise<void> {
+    this.addSql(`
+      create table "user_security_action" (
+        "id" uuid not null default gen_random_uuid(),
+        "user_id" int null,
+        "used" timestamptz not null,
+        "expires_at" timestamptz not null,
+        "secret" varchar(255) not null,
+        "event_type" varchar(50) not null,
+        "ip_address" varchar(45) null,
+        "user_agent" text null,
+        "metadata" text null,
+        "created_at" timestamptz not null default current_timestamp,
 
-    table.timestamp('used').notNullable();
+        primary key ("id"),
 
-    table.timestamp('expires_at').notNullable();
+        constraint "user_security_action_user_id_foreign"
+          foreign key ("user_id")
+          references "user" ("id")
+          on delete cascade
+      );
+    `);
 
-    table.string('secret', 255).notNullable();
+    this.addSql(`
+      create index "user_security_action_user_id_index"
+      on "user_security_action" ("user_id");
+    `);
 
-    table.string('event_type', 50).notNullable();
+    this.addSql(`
+      create index "user_security_action_event_type_index"
+      on "user_security_action" ("event_type");
+    `);
+  }
 
-    table.string('ip_address', 45).nullable();
-
-    table.text('user_agent').nullable();
-
-    table.text('metadata').nullable();
-
-    table
-      .timestamp('created_at')
-      .notNullable()
-      .defaultTo(knex.fn.now());
-
-    table.index(['user_id']);
-    table.index(['event_type']);
-  });
-}
-
-export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTableIfExists('user_security_action');
+  override async down(): Promise<void> {
+    this.addSql(`
+      drop table if exists "user_security_action" cascade;
+    `);
+  }
 }

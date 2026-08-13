@@ -1,14 +1,15 @@
 import {Body,Controller,Post,} from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { VerifySignupDto } from './dto/verify-signup.dto';
-import { LoginDto } from './dto/login.dto';
-import { VerifyLoginDto } from './dto/verify-login.dto';
-import { UserService } from './user.service';
+import { AuthService } from './auth.service.js';
+import { CreateUserDto } from '../users/dto/create-user.dto.js';
+import { VerifySignupDto } from './dto/verify-signup.dto.js';
+import { LoginDto } from './dto/login.dto.js';
+import { VerifyLoginDto } from './dto/verify-login.dto.js';
+
 
 @Controller()
 export class UserController {
   constructor(
-    private readonly userService: UserService,
+    private readonly userService: AuthService,
   ) {}
 
   @Post('signup')

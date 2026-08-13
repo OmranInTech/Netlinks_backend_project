@@ -22,6 +22,7 @@
   "dependencies": {
     "@mikro-orm/core": "^7.1.11",
     "@mikro-orm/decorators": "^7.1.11",
+    "@mikro-orm/migrations": "^7.1.11",
     "@mikro-orm/nestjs": "^7.0.2",
     "@mikro-orm/postgresql": "^7.1.11",
     "@nestjs/axios": "^4.0.1",
@@ -37,7 +38,6 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "dotenv": "^17.4.2",
-    "knex": "^3.3.0",
     "nestjs-i18n": "^10.8.5",
     "otplib": "^13.4.1",
     "passport": "^0.7.0",

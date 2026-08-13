@@ -1,21 +1,28 @@
-import type { Knex } from 'knex';
+import { Migration } from '@mikro-orm/migrations';
 
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable('otp', (table) => {
-    table.increments('id').primary();
+export class Migration20260813170000 extends Migration {
 
-    table.string('phone').notNullable().index();
+  override async up(): Promise<void> {
+    this.addSql(`
+      create table "otp" (
+        "id" serial primary key,
+        "phone" varchar(255) not null,
+        "code" varchar(255) not null,
+        "expires_at" timestamptz not null,
+        "created_at" timestamptz not null default current_timestamp,
+        "verified" boolean not null default false
+      );
+    `);
 
-    table.string('code').notNullable();
+    this.addSql(`
+      create index "otp_phone_index"
+      on "otp" ("phone");
+    `);
+  }
 
-    table.timestamp('expires_at').notNullable();
-
-    table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
-
-    table.boolean('verified').notNullable().defaultTo(false);
-  });
-}
-
-export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTableIfExists('otp');
+  override async down(): Promise<void> {
+    this.addSql(`
+      drop table if exists "otp" cascade;
+    `);
+  }
 }

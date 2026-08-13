@@ -7,13 +7,10 @@ import {
   ConfigService,
 } from '@nestjs/config';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-
-import { SmsService } from './sms.service';
-import { AuthTokenService } from './token.service';
-
-import { JwtStrategy } from './strategies/jwt.strategy';
-
-import { UserSession } from '../shared/entities/user/user-session.entity';
+import { UserSession } from '../entities/user-session/user-session.entity.js';
+import { SmsService } from '../shared/services/sms.service.js';
+import { AuthTokenService } from '../shared/services/token.service.js';
+import { JwtStrategy } from '../shared/strategies/jwt.strategy.js';
 
 @Module({
   imports: [

@@ -1,10 +1,11 @@
 import 'dotenv/config';
 import { defineConfig } from '@mikro-orm/postgresql';
 
-import { User } from '../shared/entities/user/user.entity.js';
-import { Otp } from '../shared/entities/user/otp.entity.js';
-import { UserSession } from '../shared/entities/user/user-session.entity.js';
-import { UserTwoFactor } from '../shared/entities/user/user-two-factor.entity.js';
+import { User } from '../entities/users/user.entity.js';
+import { Otp } from '../entities/otp/otp.entity.js';
+import { UserSession } from '../entities/user-session/user-session.entity.js';
+import { UserTwoFactor } from '../entities/two-factor/user-two-factor.entity.js';
+import { Migrator } from '@mikro-orm/migrations';
 
 export default defineConfig({
   host: process.env.DB_HOST,
@@ -19,4 +20,11 @@ export default defineConfig({
     UserSession,
     UserTwoFactor,
   ],
+
+  extensions: [Migrator],
+
+  migrations: {
+    path: './dist/database/migrations',
+    pathTs: './src/database/migrations',
+  },
 });

@@ -1,39 +1,37 @@
-import { Knex } from 'knex';
+import { Migration } from '@mikro-orm/migrations';
 
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable('user_session', (table) => {
-    table.uuid('id').primary();
+export class Migration20260813130000 extends Migration {
 
-    table
-      .integer('user_id')
-      .notNullable()
-      .references('id')
-      .inTable('user')
-      .onDelete('CASCADE');
+  override async up(): Promise<void> {
+    this.addSql(`
+      create table "user_session" (
+        "id" uuid not null,
+        "user_id" int not null,
+        "refresh_token_hash" varchar(255) not null,
+        "expires_at" timestamptz not null,
+        "revoked_at" timestamptz null,
+        "ip_address" varchar(45) null,
+        "user_agent" text null,
+        "created_at" timestamptz not null default current_timestamp,
+        primary key ("id"),
+        constraint "user_session_refresh_token_hash_unique"
+          unique ("refresh_token_hash"),
+        constraint "user_session_user_id_foreign"
+          foreign key ("user_id")
+          references "user" ("id")
+          on delete cascade
+      );
+    `);
 
-    table
-      .string('refresh_token_hash', 255)
-      .notNullable()
-      .unique();
+    this.addSql(`
+      create index "user_session_user_id_index"
+      on "user_session" ("user_id");
+    `);
+  }
 
-    table.timestamp('expires_at').notNullable();
-
-    table.timestamp('revoked_at').nullable();
-
-    table.string('ip_address', 45).nullable();
-
-    table.text('user_agent').nullable();
-
-    table
-      .timestamp('created_at')
-      .notNullable()
-      .defaultTo(knex.fn.now());
-
-    table.index(['user_id']);
-  });
-}
-
-export async function down(knex: Knex): Promise<void> {
- 
-  await knex.schema.dropTableIfExists('user_session');
+  override async down(): Promise<void> {
+    this.addSql(`
+      drop table if exists "user_session" cascade;
+    `);
+  }
 }

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
 import { randomUUID } from 'crypto';
+import { User } from '../../entities/users/user.entity.js';
+import { UserSession } from '../../entities/user-session/user-session.entity.js';
 
-import { User } from '../shared/entities/user/user.entity';
-import { UserSession } from '../shared/entities/user/user-session.entity';
 
 @Injectable()
 export class AuthSessionService {
